@@ -41,6 +41,17 @@ def load_sprite_sheets(dir1, dir2, width, height, direction=False):
 
     return all_sprites
 
+def get_block(size):
+    path = join("assets", "Terrain", "Terrain.png")
+    image = pygame.image.load(path).convert_alpha()
+    surface = pygame.Surface((size, size), pygame.SRCALPHA, 32)
+
+
+    # Terrain chooser, change 96, 0 and the size up above(32) to get a different terrain (based on the left hand corner)
+    rect = pygame.Rect(96, 0, size, size)
+    surface.blit(image, (0,0), rect)
+    return pygame.transform.scale2x(surface)
+
 # Player entity and specifications
 class Player(pygame.sprite.Sprite):
     COLOR = (255, 0, 0)
@@ -55,6 +66,7 @@ class Player(pygame.sprite.Sprite):
 
     # Values we can use to define character look and movement
     def __init__(self, x, y, width, height):
+        super().__init__()
         self.rect = pygame.Rect(x, y, width, height)
         self.x_vel = 0
         self.y_vel = 0
@@ -91,6 +103,7 @@ class Player(pygame.sprite.Sprite):
         self.fall_count += 1
         self.update_sprite()
 
+    # Updates character animations
     def update_sprite(self):
         sprite_sheet = "idle"
         if self.x_vel != 0:
@@ -101,7 +114,9 @@ class Player(pygame.sprite.Sprite):
         sprite_index = self.animation_count // self.ANIMATION_DELAY % len(sprites)
         self.sprite = sprites[sprite_index]
         self.animation_count += 1
+        self.update()
 
+    # Adjusts for pixel perfect collision
     def update(self):
         self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
         self.mask = pygame.mask.from_surface(self.sprite)
@@ -110,7 +125,24 @@ class Player(pygame.sprite.Sprite):
     def draw(self, win):
         win.blit(self.sprite, (self.rect.x, self.rect.y))
 
+class Object(pygame.sprite.Sprite):
+    def __init__(self, x, y, width, height, name=None):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
+        self.width = width
+        self.height = height
+        self.name = name
 
+    def draw(self, win):
+        win.blit(self.image, (self.rect.x, self.rect.y))
+
+class Block(Object):
+    def __init__(self, x, y, size):
+        super().__init__(x, y, size, size)
+        block = get_block(size)
+        self.image.blit(block, (0, 0))
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 # Background display function
@@ -127,17 +159,22 @@ def get_background(name):
 
 
 # Draw function
-def draw(window, background, bg_image, player):
+def draw(window, background, bg_image, player, Objects):
 
     # Background display
     for tile in background:
         window.blit(bg_image, tile)
 
+    for obj in Objects:
+        obj.draw(window)
+
     player.draw(window)
 
     pygame.display.update()
 
-def handle_move(player):
+
+
+def handle_move(player, objects):
     keys = pygame.key.get_pressed()
 
     player.x_vel = 0 
@@ -153,7 +190,11 @@ def main(window):
     # Background color selector
     background, bg_image = get_background("Pink.png")
 
+    block_size = 96
+
     player = Player(100, 100, 50, 50)
+    floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
+
 
     run = True
 
@@ -167,7 +208,7 @@ def main(window):
         
         player.loop(FPS)
         handle_move(player)
-        draw(window, background, bg_image, player)
+        draw(window, background, bg_image, player, floor)
 
 
     pygame.quit()
