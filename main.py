@@ -4,7 +4,6 @@ import math
 import pygame
 from os import listdir
 from os.path import isfile, join
-from pygame.sprite import Group
 pygame.init()
 
 pygame.display.set_caption('Pixel Jumper')
@@ -40,6 +39,7 @@ def load_sprite_sheets(dir1, dir2, width, height, direction=False):
         else:
             all_sprites[image.replace(".png", "")] = sprites
 
+    return all_sprites
 
 # Player entity and specifications
 class Player(pygame.sprite.Sprite):
@@ -50,6 +50,8 @@ class Player(pygame.sprite.Sprite):
 
     # Character selection
     SPRITES = load_sprite_sheets("MainCharacters", "PinkMan", 32, 32, True)
+
+    ANIMATION_DELAY = 3
 
     # Values we can use to define character look and movement
     def __init__(self, x, y, width, height):
@@ -83,14 +85,30 @@ class Player(pygame.sprite.Sprite):
 
     # Get character status after each iteration to update display
     def loop(self, fps):
-        self.y_vel += min(1, (self.fall_count / fps)) * self.GRAVITY
+        # self.y_vel += min(1, (self.fall_count / fps) * self.GRAVITY)
         self.move(self.x_vel, self.y_vel)
 
         self.fall_count += 1
+        self.update_sprite()
+
+    def update_sprite(self):
+        sprite_sheet = "idle"
+        if self.x_vel != 0:
+            sprite_sheet = "run"
+        
+        sprite_sheet_name = sprite_sheet + "_" + self.direction
+        sprites = self.SPRITES[sprite_sheet_name]
+        sprite_index = self.animation_count // self.ANIMATION_DELAY % len(sprites)
+        self.sprite = sprites[sprite_index]
+        self.animation_count += 1
+
+    def update(self):
+        self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
+        self.mask = pygame.mask.from_surface(self.sprite)
 
     # Update character state on actions
     def draw(self, win):
-        pygame.draw.rect(win, self.COLOR, self.rect)
+        win.blit(self.sprite, (self.rect.x, self.rect.y))
 
 
 
