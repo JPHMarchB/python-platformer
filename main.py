@@ -182,7 +182,7 @@ class Object(pygame.sprite.Sprite):
 
 class Enemy(Object):
     ANIMATION_DELAY = 3
-    def __init__(self, x, y, width, height, enemy_type):
+    def __init__(self, x, y, width, height, min_x, max_x, enemy_type):
         super().__init__(x, y, width, height, "enemy")
         self.enemy = load_sprite_sheets("Enemies", enemy_type, width, height)
         self.image = self.enemy["Run"][0]
@@ -191,6 +191,8 @@ class Enemy(Object):
         self.animation_name = "Run"
         self.direction = "left"
         self.speed = 2
+        self.min_x = min_x
+        self.max_x = max_x
     
     def idle(self):
         self.animation_name = "Idle"
@@ -211,14 +213,17 @@ class Enemy(Object):
         # Update position based on direction
         if self.direction == "right":
             self.rect.x += self.speed
+            self.image = pygame.transform.flip(self.image, True, False)
         elif self.direction == "left":
             self.rect.x -= self.speed
 
-        # Change direction if hitting boundaries
-        if self.rect.left < 0:
+        if self.rect.left <= self.min_x:
             self.direction = "right"
-        elif self.rect.right > 200:
+        elif self.rect.right >= self.max_x:
             self.direction = "left"
+
+        # Clamp the position within boundaries
+        self.rect.x = max(self.min_x, min(self.rect.x, self.max_x - self.rect.width))
 
         if self.animation_count // self.ANIMATION_DELAY > len(sprites):
             self.animation_count = 0
@@ -346,8 +351,8 @@ def main(window):
 
     player = Player(50, 300, 50, 50)
 
-    enemy1 = Enemy(100, HEIGHT - block_size - 64, 32, 32, "Mushroom")
-    enemy2 = Enemy(200, HEIGHT - block_size - 74, 30, 38, "Radish")
+    enemy1 = Enemy(1000, HEIGHT - block_size - 64, 32, 32, 800, 1000, "Mushroom")
+    enemy2 = Enemy(460, HEIGHT - block_size * 5 + 20, 30, 38, 460, 600, "Radish")
 
     fire = Fire(510, HEIGHT - block_size - 64, 16, 32) 
     fire.on()
