@@ -229,14 +229,14 @@ class Enemy(Object):
             self.animation_count = 0
 
 class Fire(Object):
-    ANIMATION_DELAY = 3
+    ANIMATION_DELAY = 7
     def __init__(self, x, y, width, height):
         super().__init__(x, y, width, height, "fire")
         self.fire = load_sprite_sheets("Traps", "Fire", width, height)
-        self.image = self.fire["off"][0]
+        self.image = self.fire["on"][0]
         self.mask = pygame.mask.from_surface(self.image)
         self.animation_count = 0
-        self.animation_name = "off"
+        self.animation_name = "on"
     
     def on(self):
         self.animation_name = "on"
@@ -345,34 +345,36 @@ def main(window):
     clock = pygame.time.Clock()
 
     # Background color selector
-    background, bg_image = get_background("Pink.png")
+    background, bg_image = get_background("Yellow.png")
 
     block_size = 96
 
     player = Player(50, 300, 50, 50)
 
-    enemy1 = Enemy(1000, HEIGHT - block_size - 64, 32, 32, 800, 1000, "Mushroom")
-    enemy2 = Enemy(460, HEIGHT - block_size * 5 + 20, 30, 38, 460, 600, "Radish")
+    enemies = [
+        Enemy(1000, HEIGHT - block_size - 64, 32, 32, 800, 1000, "Mushroom"),
+        # Enemy(460, HEIGHT - block_size * 5 + 20, 30, 38, 460, 600, "Radish"),
+        ]
 
-    fire = Fire(510, HEIGHT - block_size - 64, 16, 32) 
-    fire.on()
+    fires = [
+        Fire(510, HEIGHT - block_size - 64, 16, 32),
+        ]
 
     floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range(-WIDTH // block_size, WIDTH * 4 // block_size)]
 
     # Object placement
     objects = [
-        # Main floor
+        # Main entities
         *floor,
-        
+        *enemies,
+        *fires,
+
         # Back wall
         Block(block_size * -2, HEIGHT - block_size * 2, block_size),
         Block(block_size * -2, HEIGHT - block_size * 3, block_size),
         Block(block_size * -2, HEIGHT - block_size * 4, block_size),
         Block(block_size * -2, HEIGHT - block_size * 5, block_size),
         Block(block_size * -2, HEIGHT - block_size * 6, block_size),
-        fire,
-        enemy1,
-        enemy2, 
     
         # Block(0, HEIGHT - block_size * 2, block_size),
 
@@ -404,10 +406,11 @@ def main(window):
         
         player.loop(FPS)
         
-        enemy1.loop()
-        enemy2.loop()
+        for enemy in enemies:
+            enemy.loop()
 
-        fire.loop()
+        for fire in fires:
+            fire.loop()
 
         handle_move(player, objects)
         draw(window, background, bg_image, player, objects, offset_x)
