@@ -54,8 +54,6 @@ def get_block(size):
 
 # Player entity and specifications
 class Player(pygame.sprite.Sprite):
-    COLOR = (255, 0, 0)
-
     # Gravity constant
     GRAVITY = 0.5
 
@@ -182,6 +180,90 @@ class Object(pygame.sprite.Sprite):
     def draw(self, win, offset_x):
         win.blit(self.image, (self.rect.x - offset_x, self.rect.y))
 
+class Enemy(pygame.sprite.Sprite):
+    # Gravity constant
+    GRAVITY = 0.5
+
+    # Character selection
+    SPRITES = load_sprite_sheets("Enemies", "Mushroom", 32, 32, True)
+
+    ANIMATION_DELAY = 3
+
+    # Values we can use to define character look and movement
+    def __init__(self, x, y, width, height):
+        super().__init__()
+        self.rect = pygame.Rect(x, y, width, height)
+        self.x_vel = 0
+        self.y_vel = 0
+        self.mask = None
+        self.direction = 'left'
+        self.animation_count = 0
+        self.hit = False
+        self.hit_count = 0
+
+    def move(self, dx, dy):
+        self.rect.x += dx
+        self.rect.y += dy
+
+    def make_hit(self):
+        self.hit = True
+        self.hit_count = 0
+
+    # Player moves left
+    def move_left(self, vel):
+        self.x_vel = -vel
+
+        if self.direction != 'left':
+            self.direction = 'left'
+            self.animation_count = 0
+
+    # Player moves right
+    def move_right(self, vel):
+        self.x_vel = vel
+
+        if self.direction != 'right':
+            self.direction = 'right'
+            self.animation_count = 0
+
+    # Get character status after each iteration to update display
+    def loop(self, fps):
+        self.move(self.x_vel, self.y_vel)
+
+        if self.hit:
+            self.hit_count += 1
+        if self.hit_count > fps *3:
+            self.hit = False
+            self.hit_count = 0
+
+        self.update_sprite()
+
+    # Updates character animations
+    def update_sprite(self):
+        sprite_sheet = "Idle"
+        
+        if self.hit:
+            sprite_sheet = "Hit"
+
+        # Running animation checker and setter
+        elif self.x_vel != 0:
+            sprite_sheet = "Run"
+        
+        sprite_sheet_name = sprite_sheet + "_" + self.direction
+        sprites = self.SPRITES[sprite_sheet_name]
+        sprite_index = self.animation_count // self.ANIMATION_DELAY % len(sprites)
+        self.sprite = sprites[sprite_index]
+        self.animation_count += 1
+        self.update()
+
+    # Adjusts for pixel perfect collision
+    def update(self):
+        self.rect = self.sprite.get_rect(topleft=(self.rect.x, self.rect.y))
+        self.mask = pygame.mask.from_surface(self.sprite)
+
+    # Update character state on actions
+    def draw(self, win, offset_x):
+        win.blit(self.sprite, (self.rect.x - offset_x, self.rect.y))
+
 class Fire(Object):
     ANIMATION_DELAY = 3
     def __init__(self, x, y, width, height):
@@ -231,7 +313,7 @@ def get_background(name):
 
 
 # Draw function
-def draw(window, background, bg_image, player, Objects, offset_x):
+def draw(window, background, bg_image, player, enemy, Objects, offset_x):
 
     # Background display
     for tile in background:
@@ -242,10 +324,13 @@ def draw(window, background, bg_image, player, Objects, offset_x):
 
     player.draw(window, offset_x)
 
+    enemy.draw(window, offset_x)
+
     pygame.display.update()
 
 def handle_verticle_collision(player, objects, dy):
     collided_objects = []
+    
     for obj in objects:
         if pygame.sprite.collide_mask(player, obj):
             if dy > 0:
@@ -300,16 +385,33 @@ def main(window):
     block_size = 96
 
     player = Player(100, 100, 50, 50)
-    fire = Fire(100, HEIGHT - block_size - 64, 16, 32)
+    enemy = Enemy(100, 100, 50, 50)
+
+    fire = Fire(100, HEIGHT - block_size - 64, 16, 32) 
     fire.on()
-    floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range(-WIDTH // block_size, WIDTH * 2 // block_size)]
+    floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range(-WIDTH // block_size, WIDTH * 4 // block_size)]
 
     # Object placement
-    objects = [*floor, 
-               Block(0, HEIGHT - block_size * 2, block_size), 
-               Block(block_size *3, HEIGHT - block_size * 4, block_size),
-               Block(block_size *2, HEIGHT - block_size * 4, block_size), fire
-               ]
+    objects = [
+        # Main floor
+        *floor,
+        
+        # Back wall
+        Block(block_size * -2, HEIGHT - block_size * 2, block_size),
+        Block(block_size * -2, HEIGHT - block_size * 3, block_size),
+        Block(block_size * -2, HEIGHT - block_size * 4, block_size),
+        Block(block_size * -2, HEIGHT - block_size * 5, block_size),
+        Block(block_size * -2, HEIGHT - block_size * 6, block_size),
+        # Block(0, HEIGHT - block_size * 2, block_size),
+
+        # Platform 1
+        Block(block_size *4, HEIGHT - block_size * 4, block_size),
+        Block(block_size *5, HEIGHT - block_size * 4, block_size),
+        Block(block_size *6, HEIGHT - block_size * 4, block_size),
+
+        # Platform 2
+        
+        ]
 
     offset_x = 0
     scroll_area_width = 200
@@ -329,9 +431,11 @@ def main(window):
                     player.jump()
         
         player.loop(FPS)
+        enemy.loop(FPS)
+
         fire.loop()
         handle_move(player, objects)
-        draw(window, background, bg_image, player, objects, offset_x)
+        draw(window, background, bg_image, player, enemy, objects, offset_x)
 
         # Allows for scrolling left and right when moving
         if ((player.rect.right - offset_x >= WIDTH - scroll_area_width) and player.x_vel > 0) or ((player.rect.left - offset_x <= scroll_area_width) and player.x_vel < 0):
