@@ -360,7 +360,54 @@ def handle_move(player, objects):
             player.make_hit()
 
         elif obj and obj.name == "enemy":
-            player.make_hit()          
+            player.make_hit()  
+
+
+def menu(window):
+    pygame.display.set_caption("Main Menu")
+
+    run = True
+
+    background, bg_image = get_background("Green.png")
+
+    while run:
+
+        MENU_MOUSE_POS = pygame.mouse.get_pos()
+        # MENU_TEXT = 
+        # MENU_RECT = 
+
+
+
+        draw(window, background, bg_image)
+
+
+
+def play():
+    pygame.display.set_caption("Level Select")
+
+    run = True
+
+    background, bg_image = get_background("Blue.png")
+
+    while run:
+        
+
+        draw(window, background, bg_image)
+
+
+def settings():
+    pygame.display.set_caption("Settings")
+
+    run = True
+
+    background, bg_image = get_background("Gray.png")
+
+    while run:
+        
+
+        draw(window, background, bg_image)
+    
+
 
 # Main functionality
 def main(window):
