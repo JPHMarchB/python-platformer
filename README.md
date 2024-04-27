@@ -19,7 +19,7 @@ Python Platformer is a simple 2D platformer game built using the Python programm
 ## Usage
 1. Navigate to the project directory: `cd python-platformer`
 2. Run the main game script: `python main.py`
-3. Use the A/D to move the player character (left and right) and Spacebar to jump.
+3. Use the A/D keys to move the player character (left and right) and Spacebar to jump.
 4. Avoid obstacles and enemies while navigating through the level.
 5. Reach the end goal to complete the level.
 
