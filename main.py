@@ -255,6 +255,28 @@ class Fire(Object):
         if self.animation_count // self.ANIMATION_DELAY > len(sprites):
             self.animation_count = 0
 
+class Item(Object):
+    ANIMATION_DELAY = 3
+    def __init__(self, x, y, width, height, fruit_type):
+        super().__init__(x, y, width, height, "item")
+        self.item = load_sprite_sheets("Items", "Fruits", width, height)
+        self.image = self.item[fruit_type][0]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.animation_count = 0
+        self.animation_name = fruit_type
+
+    def loop(self):
+        sprites = self.item[self.animation_name]
+        sprite_index = self.animation_count // self.ANIMATION_DELAY % len(sprites)
+        self.image = sprites[sprite_index]
+
+        self.animation_count += 1
+        self.rect = self.image.get_rect(topleft=(self.rect.x, self.rect.y))
+        self.mask = pygame.mask.from_surface(self.image)
+
+        if self.animation_count // self.ANIMATION_DELAY > len(sprites):
+            self.animation_count = 0
+
 class Block(Object):
     def __init__(self, x, y, size):
         super().__init__(x, y, size, size)
@@ -345,11 +367,17 @@ def main(window):
     clock = pygame.time.Clock()
 
     # Background color selector
-    background, bg_image = get_background("Yellow.png")
+    background, bg_image = get_background("Pink.png")
 
     block_size = 96
 
     player = Player(50, 300, 50, 50)
+
+    items = [
+        Item(400, HEIGHT - block_size * 6, 32, 32, "Orange"),
+        Item(500, HEIGHT - block_size * 6, 32, 32, "Orange"),
+        Item(600, HEIGHT - block_size * 6, 32, 32, "Orange"),
+    ]
 
     enemies = [
         Enemy(1000, HEIGHT - block_size - 64, 32, 32, 800, 1000, "Mushroom"),
@@ -357,7 +385,7 @@ def main(window):
         ]
 
     fires = [
-        Fire(510, HEIGHT - block_size - 64, 16, 32),
+        Fire(516, HEIGHT - block_size - 64, 16, 32),
         ]
 
     floor = [Block(i * block_size, HEIGHT - block_size, block_size) for i in range(-WIDTH // block_size, WIDTH * 4 // block_size)]
@@ -368,6 +396,7 @@ def main(window):
         *floor,
         *enemies,
         *fires,
+        *items,
 
         # Back wall
         Block(block_size * -2, HEIGHT - block_size * 2, block_size),
@@ -411,6 +440,9 @@ def main(window):
 
         for fire in fires:
             fire.loop()
+
+        for item in items:
+            item.loop()
 
         handle_move(player, objects)
         draw(window, background, bg_image, player, objects, offset_x)
