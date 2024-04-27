@@ -60,7 +60,7 @@ class Player(pygame.sprite.Sprite):
     # Character selection
     SPRITES = load_sprite_sheets("MainCharacters", "PinkMan", 32, 32, True)
 
-    ANIMATION_DELAY = 3
+    ANIMATION_DELAY = 2
 
     # Values we can use to define character look and movement
     def __init__(self, x, y, width, height):
